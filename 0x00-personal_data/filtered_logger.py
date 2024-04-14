@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-Module for filtering log data.
+filtered_logger.py - Module for logging and filtering sensitive data
 """
 
 import logging
 import re
-from typing import List
-
+import os
+import mysql.connector
+from typing import List, Tuple
 
 class RedactingFormatter(logging.Formatter):
-    """Redacting Formatter class"""
-
+    """
+    RedactingFormatter - Custom log formatter to redact specified fields in log messages
+    """
     REDACTION = "***"
     FORMAT = "[HOLBERTON] %(name)s %(levelname)s %(asctime)-15s: %(message)s"
     SEPARATOR = ";"
@@ -20,26 +22,74 @@ class RedactingFormatter(logging.Formatter):
         self.fields = fields
 
     def format(self, record: logging.LogRecord) -> str:
-        record.message = self.filter_message(record.message)
-        return super().format(record)
+        """
+        Format log record and redact specified fields
+        """
+        message = super().format(record)
+        return self.filter_datum(message, self.fields, self.REDACTION, self.SEPARATOR)
 
-    def filter_message(self, message: str) -> str:
-        for field in self.fields:
-            message = self.filter_datum([field], self.REDACTION, message, self.SEPARATOR)
-        return message
+    @staticmethod
+    def filter_datum(message: str, fields: List[str], redaction: str, separator: str) -> str:
+        """
+        Replace specified fields with redaction in the log message
+        """
+        return re.sub(
+            fr'(?<={separator}|^)({"|".join(fields)})=([^{separator}]*)',
+            lambda x: f'{x.group(1)}={redaction}',
+            message
+        )
 
-def filter_datum(fields, redaction, message, separator):
+PII_FIELDS: Tuple[str, ...] = ("name", "email", "phone", "ssn", "password")
+
+def get_logger() -> logging.Logger:
     """
-    Replace occurrences of specified fields in the log message with redaction.
-
-    Args:
-        fields (list of str): Fields to obfuscate.
-        redaction (str): String representing the redaction.
-        message (str): Log message.
-        separator (str): Separator character between fields in the log message.
-
-    Returns:
-        str: Log message with specified fields obfuscated.
+    Return a configured logging.Logger object with RedactingFormatter
     """
-    import re
-    return re.sub(r'(?:{}=)(.*?)(?={})'.format('|'.join(fields), re.escape(separator)), redaction, message)
+    logger = logging.getLogger("user_data")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    
+    stream_handler = logging.StreamHandler()
+    formatter = RedactingFormatter(PII_FIELDS)
+    stream_handler.setFormatter(formatter)
+    
+    logger.addHandler(stream_handler)
+    
+    return logger
+
+def get_db() -> mysql.connector.connection.MySQLConnection:
+    """
+    Connect to the database using environment variables and return a MySQL connection
+    """
+    username = os.getenv("PERSONAL_DATA_DB_USERNAME", "root")
+    password = os.getenv("PERSONAL_DATA_DB_PASSWORD", "")
+    host = os.getenv("PERSONAL_DATA_DB_HOST", "localhost")
+    dbname = os.getenv("PERSONAL_DATA_DB_NAME")
+
+    db = mysql.connector.connect(
+        host=host,
+        user=username,
+        password=password,
+        database=dbname
+    )
+
+    return db
+
+def main() -> None:
+    """
+    Retrieve and log filtered data from the database using the configured logger and formatter
+    """
+    logger = get_logger()
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users;")
+    
+    for row in cursor.fetchall():
+        formatted_row = "; ".join(f"{field}={value}" for field, value in zip(cursor.column_names, row))
+        logger.info(formatted_row)
+    
+    cursor.close()
+    db.close()
+
+if __name__ == "__main__":
+    main()
