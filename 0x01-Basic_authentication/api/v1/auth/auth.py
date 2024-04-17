@@ -13,7 +13,6 @@ class Auth:
     system you will implement
     """
 
-
     def require_auth(self, path: str, excluded_paths: List[str]) -> bool:
         """
         defining the class
@@ -22,7 +21,7 @@ class Auth:
 
     def authorization_header(self, request=None) -> None:
         """
-        returns None - request will be 
+        returns None - request will be
         the Flask request object
         """
         return
@@ -37,7 +36,6 @@ class Auth:
 
 if __name__ == '__main__':
     a = Auth()
-
 
     print(a.require_auth("/api/v1/status/", ["/api/v1/status/"]))
     print(a.authorization_header())
