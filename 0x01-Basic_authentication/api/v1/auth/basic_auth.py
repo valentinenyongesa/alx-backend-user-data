@@ -4,7 +4,7 @@
 """
 from base64 import b64decode
 from typing import Optional
-from auth import Auth
+from api.v1.auth.auth import Auth
 
 
 class BasicAuth(Auth):
