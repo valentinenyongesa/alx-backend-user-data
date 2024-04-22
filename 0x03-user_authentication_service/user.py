@@ -7,6 +7,7 @@ from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
+
 class User(Base):
     """
     Represents table for users
@@ -23,5 +24,5 @@ class User(Base):
 if __name__ == '__main__':
     print(User.__tablename__)
 
-    for column in User.__tablename__.columns:
+    for column in User.__table__.columns:
         print("{}: {}.".format(column, column.type))
