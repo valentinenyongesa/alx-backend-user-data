@@ -57,24 +57,32 @@ class DB:
             return user
         raise NoResultFound()
 
+    def update_user(self, user_id: int, **kwargs) -> None:
+        """
+
+        """
+
+        user_to_update = self.find_user_by(id=user_id)
+
+        for attr, value in kwargs.items():
+            if hasattr(User, attr):
+                setattr(user_to_update, attr, value)
+            else:
+                raise ValueError()
+        self._session.commit()
+
 
 if __name__ == '__main__':
     my_db = DB()
 
-    user = my_db.add_user("test@test.com", "PwdHashed")
+    email = 'test@test.com'
+    hashed_password = "hashedPwd"
+
+    user = my_db.add_user(email, hashed_password)
     print(user.id)
 
-    find_user = my_db.find_user_by(email="test@test.com")
-    print(find_user.id)
-
     try:
-        find_user = my_db.find_user_by(email="test2@test.com")
-        print(find_user.id)
-    except NoResultFound:
-        print("Not found")
-
-    try:
-        find_user = my_db.find_user_by(no_email="test@test.com")
-        print(find_user.id)
-    except InvalidRequestError:
-        print("Invalid")
+        my_db.update_user(user.id, hashed_password='NewPwd')
+        print("Password updated")
+    except ValueError:
+        print("Error")
