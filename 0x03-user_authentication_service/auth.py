@@ -114,6 +114,15 @@ class Auth:
         except Exception:
             return
 
+    def get_reset_password_token(self, email: str) -> str:
+        """
+        Generate rest password token
+        """
+        try:
+            existing_user = self._db.find_user_by(email=email)
+            if existing_user:
+                token = _generate_uuid()
+
 
 if __name__ == '__main__':
     pass
