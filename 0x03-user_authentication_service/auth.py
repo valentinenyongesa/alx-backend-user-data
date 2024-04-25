@@ -91,13 +91,18 @@ class Auth:
         except NoResultFound:
             return
 
+    def get_user_from_session_id(self, session_id: str) -> Optional[str]:
+        """
+        Find user by session ID
+        """
+        try:
+            existing_user = self._db.find_user_by(session_id=session_id)
+            if existing_user:
+                return existing_user
+            return
+        except Exception:
+            return
+
 
 if __name__ == '__main__':
-    email = 'bob@bob.com'
-    password = 'MyPwdOfBob'
-    auth = Auth()
-
-    auth.register_user(email, password)
-
-    print(auth.create_session(email))
-    print(auth.create_session("unknown@email.com"))
+    pass
