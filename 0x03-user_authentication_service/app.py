@@ -3,7 +3,8 @@
 Basic Flask app
 """
 from flask import (Flask, jsonify, Response,
-                   request, abort, make_response)
+                   request, abort, make_response,
+                   redirect)
 from typing import Optional, Tuple
 from auth import Auth
 
@@ -70,6 +71,25 @@ def login() -> Optional[Tuple]:
             abort(401)
     except Exception:
         abort(401)
+
+
+@app.route("/sessions", methods=["DELETE"])
+def logout() -> Response:
+    """
+    implement a logout function to
+    respond to the DELETE /sessions route
+    """
+    if request.method == "DELETE":
+        session_id = request.cookies.get("session_id", None)
+        if session_id is None:
+            abort(403)
+        try:
+            existing_user = AUTH.get_user_from_session_id(session_id)
+            if existing_user:
+                AUTH.destroy_session(existing_user.id)
+                return redirect("/")
+        except Exception:
+            abort(403)
 
 
 if __name__ == "__main__":
