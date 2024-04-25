@@ -123,6 +123,22 @@ class Auth:
             if existing_user:
                 token = _generate_uuid()
 
+    def update_password(self, reset_token: str, password: str) -> None:
+        """
+        Update password
+        """
+        try:
+            existing_user = self._db.find_user_by(reset_token=reset_token)
+        except Exception:
+            raise ValueError
+
+        hashed_pwd = _hash_password(password)
+
+        self._db.update_user(existing_user.id,
+                             hashed_password=hashed_pwd.decode("utf-8"))
+
+        self._db.update_user(existing_user.id, reset_token=None)
+
 
 if __name__ == '__main__':
     pass
