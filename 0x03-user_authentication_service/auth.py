@@ -103,6 +103,17 @@ class Auth:
         except Exception:
             return
 
+    def destroy_session(self, user_id: int) -> None:
+        """
+        Destroy session associated with givebn userID
+        """
+        try:
+            user = self._db.find_user_by(id=user_id)
+            user.session_id = None
+            self._db._session.commit()
+        except Exception:
+            return
+
 
 if __name__ == '__main__':
     pass
