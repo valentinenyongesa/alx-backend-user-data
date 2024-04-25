@@ -2,7 +2,9 @@
 """
 Basic Flask app
 """
-from flask import Flask, jsonify, Response, request
+from flask import (Flask, jsonify, Response,
+                   request, abort, make_response)
+from typing import Optional, Tuple
 from auth import Auth
 
 
@@ -40,6 +42,34 @@ def users() -> Response:
             return jsonify({"message": "email already registered"})
     else:
         abort(400)
+
+
+@app.route("/session", methods=["POST"])
+def login() -> Optional[Tuple]:
+    """
+    implement a login function
+    to respond to the POST /sessions route
+    """
+    try:
+        if request.method == "POST":
+            raw_email = request.form.get("email")
+            email = raw_email.strip()
+            raw_password = request.form.get("password")
+            password = raw_password.strip()
+            try:
+                if not AUTH.valid_login(email, password):
+                    abort(401)
+                session_id = AUTH.create_session(email)
+                message = {"email": email, "message": "logged in"}
+                response = make_response(jsonify(message), 200)
+                response.set_cookie("session_id", session_id)
+                return response
+            except ValueError:
+                abort(401)
+        else:
+            abort(401)
+    except Exception:
+        abort(401)
 
 
 if __name__ == "__main__":
